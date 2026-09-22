@@ -1,0 +1,23 @@
+{
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": [
+          "app.py",
+          "db.py",
+          "pdf.py",
+          "validation.py",
+          "forms/**",
+          "templates/**",
+          "static/**",
+          "sql/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "api/index.py" }
+  ]
+}

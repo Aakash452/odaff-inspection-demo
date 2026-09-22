@@ -11,38 +11,35 @@ fonts and page numbering stay identical across all documents. #}
     @font-face {
       font-family: "Public Sans";
       src: url("fonts/PublicSans.ttf");
-      font-weight: 100 900;
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: "Public Sans";
+      src: url("fonts/PublicSans.ttf");
+      font-weight: bold;
       font-style: normal;
     }
 
     @font-face {
       font-family: "Public Sans";
       src: url("fonts/PublicSans-Italic.ttf");
-      font-weight: 100 900;
+      font-weight: normal;
       font-style: italic;
     }
 
     @page {
       size: letter;
-      margin: 0.5in 0.55in 0.6in 0.55in;
+      margin: 0.5in 0.55in 0.7in 0.55in;
 
-      @bottom-left {
-        content: "{{ insp.InspectionNumber }}  |  Generated {{ generated_at }}  |  Demonstration document, not an official record";
-        font: 7pt "Public Sans";
-        color: #5B665D;
-        width: 80%;
+      @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        bottom: 0.25in;
+        margin-left: 0.55in;
+        margin-right: 0.55in;
+        height: 0.3in;
       }
-
-      @bottom-right {
-        content: "Page " counter(page) " of " counter(pages);
-        font: 7pt "Public Sans";
-        color: #5B665D;
-        width: 20%;
-      }
-    }
-
-    * {
-      box-sizing: border-box;
     }
 
     body {
@@ -55,12 +52,33 @@ fonts and page numbering stay identical across all documents. #}
     }
 
     .masthead {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
+      width: 100%;
       border-bottom: 2.2pt solid #2E5E3A;
       padding-bottom: 6pt;
       margin-bottom: 6pt;
+    }
+
+    .masthead td {
+      vertical-align: bottom;
+    }
+
+    .masthead .numbox-cell {
+      text-align: right;
+      width: 1.9in;
+    }
+
+    .footer {
+      font-size: 7pt;
+      color: #5B665D;
+      width: 100%;
+    }
+
+    .footer .foot-left {
+      text-align: left;
+    }
+
+    .footer .foot-right {
+      text-align: right;
     }
 
     .agency {
@@ -108,7 +126,7 @@ fonts and page numbering stay identical across all documents. #}
       background: #2E5E3A;
       padding: 3pt 6pt;
       margin: 7pt 0 0;
-      break-after: avoid;
+      page-break-after: avoid;
     }
 
     h2 span {
@@ -157,7 +175,7 @@ fonts and page numbering stay identical across all documents. #}
     }
 
     .rows tr {
-      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
     .num {
@@ -197,7 +215,6 @@ fonts and page numbering stay identical across all documents. #}
       border-top: 0;
       padding: 4pt 6pt;
       min-height: 24pt;
-      white-space: pre-wrap;
     }
 
     .alert {
@@ -211,24 +228,23 @@ fonts and page numbering stay identical across all documents. #}
     }
 
     .keep {
-      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
     .sigs {
-      display: flex;
-      gap: 14pt;
+      width: 100%;
       margin-top: 4pt;
     }
 
-    .sig {
-      flex: 1;
+    .sigs td {
+      width: 50%;
+      vertical-align: top;
+      padding-right: 14pt;
     }
 
     .sig .line {
       height: 34pt;
       border-bottom: 0.9pt solid #1F2A22;
-      display: flex;
-      align-items: flex-end;
     }
 
     .sig img {
@@ -252,20 +268,32 @@ fonts and page numbering stay identical across all documents. #}
 </head>
 
 <body>
-  <header class="masthead">
-    <div>
-      <div class="agency">
-        <strong>Demo Department</strong>
-        Consumer Protection Services Division
-      </div>
-      <div class="doc-title">{{ form.FORM_TITLE }}</div>
-    </div>
-    <div class="numbox">
-      <div class="k">Inspection number</div>
-      <div class="v">{{ insp.InspectionNumber }}</div>
-      <div class="k">Form {{ form.FORM_CODE }}</div>
-    </div>
-  </header>
+  <div id="footer_content">
+    <table class="footer">
+      <tr>
+        <td class="foot-left">{{ insp.InspectionNumber }} &nbsp;|&nbsp; Generated {{ generated_at }} &nbsp;|&nbsp; Demonstration document, not an official record</td>
+        <td class="foot-right">Page <pdf:pagenumber /> of <pdf:pagecount /></td>
+      </tr>
+    </table>
+  </div>
+  <table class="masthead">
+    <tr>
+      <td>
+        <div class="agency">
+          <strong>Demo Department</strong>
+          Consumer Protection Services Division
+        </div>
+        <div class="doc-title">{{ form.FORM_TITLE }}</div>
+      </td>
+      <td class="numbox-cell">
+        <div class="numbox">
+          <div class="k">Inspection number</div>
+          <div class="v">{{ insp.InspectionNumber }}</div>
+          <div class="k">Form {{ form.FORM_CODE }}</div>
+        </div>
+      </td>
+    </tr>
+  </table>
   {% block report %}{% endblock %}
 </body>
 

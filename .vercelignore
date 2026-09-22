@@ -1,0 +1,7 @@
+.venv
+__pycache__
+.pytest_cache
+tests
+docs
+sample_output
+inspections.db

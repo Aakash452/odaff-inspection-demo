@@ -33,10 +33,10 @@ Sample output: [`sample_output/CF-2026-000001.pdf`](sample_output/CF-2026-000001
    in **one transaction** (`db.py`).
 4. **SQL** (`sql/schema.mssql.sql`) is T-SQL for SQL Server: identity keys,
    foreign keys with cascade, CHECK constraints (including `ISJSON` on the raw
-   payload), indexes for common lookups, and a summary view. A SQLite mirror
-   lets the project run with no setup.
+   payload), indexes for common lookups, and a summary view. SQLite and
+   Postgres mirrors let the project run with no setup or on serverless hosts.
 5. **PDF** (`pdf.py`, `templates/pdf/`) renders the *stored* record through a
-   Jinja template and WeasyPrint, then saves the PDF bytes and a SHA-256 hash
+   Jinja template and xhtml2pdf, then saves the PDF bytes and a SHA-256 hash
    to `InspectionDocuments`.
 
 ## Run it
@@ -48,18 +48,12 @@ python -m pytest -q                 # 8 tests: happy path plus every business ru
 python scripts/generate_sample.py   # writes sample_output/CF-2026-000001.pdf
 ```
 
-On macOS, WeasyPrint needs Pango from Homebrew:
-
-```bash
-brew install pango
-export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH
-```
-
 If port 5000 is taken by AirPlay Receiver, use `flask --app app run --port 5001`.
 
 Against SQL Server:
 
 ```bash
+pip install pyodbc==5.*             # not in requirements.txt; native ODBC deps aren't serverless-friendly
 docker compose up --build
 docker compose exec db /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong!Passw0rd" -C -i /schema/schema.mssql.sql
 ```
@@ -67,6 +61,38 @@ docker compose exec db /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Your
 `DB_DIALECT=mssql` switches `db.py` to pyodbc. The queries are the same
 parameterized SQL, with `OUTPUT INSERTED` and `TOP` in place of SQLite's
 `RETURNING` and `LIMIT`.
+
+## Deploy to Vercel
+
+The app runs as a Vercel serverless function (`api/index.py` re-exports the
+Flask app; `vercel.json` routes every request to it). Two changes were made
+so it runs on Vercel at all:
+
+- **PDF engine**: WeasyPrint needs native libraries (Pango, Cairo,
+  GDK-Pixbuf) that aren't available in Vercel's Python runtime, so
+  `pdf.py` uses **xhtml2pdf** instead (pure Python, pip-installable). Its
+  CSS support is more limited than WeasyPrint's, so the report templates
+  (`templates/pdf/`) were adjusted — table-based layout instead of flexbox,
+  xhtml2pdf's `@frame`/`<pdf:pagenumber>` for the running footer instead of
+  CSS Paged Media. The report looks close to the original but not pixel
+  identical.
+- **Database**: serverless functions have no persistent disk, so SQLite
+  can't be used in production. `db.py` gained a `DB_DIALECT=postgres` mode
+  (via `psycopg2`) alongside the existing SQLite and SQL Server dialects.
+
+Steps:
+
+1. Provision a Postgres database (Vercel's Storage tab → Postgres, or a
+   Neon/Supabase database) and copy its connection string.
+2. In the Vercel project's Environment Variables, set:
+   - `DB_DIALECT` = `postgres`
+   - `DATABASE_URL` = the connection string from step 1
+3. Import the GitHub repo into Vercel (or run `vercel` from this directory
+   with the Vercel CLI) and deploy. Tables are created automatically on
+   first cold start (`db.init_db()`), same as the SQLite demo.
+
+`inspections.db` and the SQLite/mssql paths are untouched — `DB_DIALECT`
+defaults to `sqlite`, so local development and `pytest` still need no setup.
 
 ## Built for many forms, not one
 
@@ -89,14 +115,16 @@ form's owner, build, then verify against the original.
 ```
 app.py                     Flask routes
 validation.py              server-side rules, errors keyed by field path
-db.py                      SQL Server / SQLite data access, one transaction per save
-pdf.py                     Jinja + WeasyPrint, stores PDF and SHA-256
+db.py                      SQL Server / Postgres / SQLite data access, one transaction per save
+pdf.py                     Jinja + xhtml2pdf, stores PDF and SHA-256
 forms/feed_inspection.py   form definition shared by HTML, validation and PDF
 templates/                 HTML form and PDF templates
 static/                    CSS, JS, Public Sans font
-sql/                       T-SQL schema plus SQLite mirror for local runs
+sql/                       T-SQL schema plus SQLite/Postgres mirrors
 tests/                     pytest suite
 docs/                      field mapping, screenshots
+api/index.py               Vercel serverless entrypoint (re-exports app.py)
+vercel.json                Vercel build/route config
 Dockerfile, docker-compose.yml
 ```
 

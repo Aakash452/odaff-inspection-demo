@@ -1,5 +1,5 @@
 """
-Saved inspection data -> Jinja template -> HTML -> PDF (WeasyPrint).
+Saved inspection data -> Jinja template -> HTML -> PDF (xhtml2pdf).
 
 The PDF is built from what is in the database, not from what the browser
 sent, so the document always matches the stored record. Each PDF is saved
@@ -7,16 +7,25 @@ to InspectionDocuments with a SHA-256 hash of its bytes.
 """
 import base64
 import hashlib
+import io
 from datetime import datetime, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML
+from xhtml2pdf import pisa
 
 import db
 from forms import feed_inspection as F
 
 BASE = Path(__file__).parent
+
+
+def _resolve_static(uri, _rel):
+    """xhtml2pdf can't fetch relative @font-face URLs itself; point it at static/.
+    Signature images arrive as data: URIs and must pass through unchanged."""
+    if uri.startswith("data:"):
+        return uri
+    return str(BASE / "static" / uri.lstrip("/"))
 env = Environment(
     loader=FileSystemLoader(BASE / "templates"),
     autoescape=select_autoescape(["html"]),  # inspector text is escaped, never trusted as HTML
@@ -62,7 +71,11 @@ def build_pdf(inspection_id, store=True):
     if insp is None:
         raise LookupError(f"Inspection {inspection_id} not found")
     html = render_html(insp)
-    pdf_bytes = HTML(string=html, base_url=str(BASE / "static")).write_pdf()
+    buffer = io.BytesIO()
+    result = pisa.CreatePDF(io.StringIO(html), dest=buffer, link_callback=_resolve_static)
+    if result.err:
+        raise RuntimeError(f"PDF generation failed for inspection {inspection_id}")
+    pdf_bytes = buffer.getvalue()
     digest = hashlib.sha256(pdf_bytes).hexdigest()
     file_name = f"{insp['InspectionNumber']}.pdf"
     if store:

@@ -82,20 +82,22 @@
 
 <div class="keep">
 <h2>Part 5<span>Remarks and acknowledgment</span></h2>
-<div class="note">{{ insp.Remarks or "None." }}</div>
+<div class="note">{{ (insp.Remarks or "None.") | e | replace("\n", "<br/>") | safe }}</div>
 
-<div class="sigs">
-  <div class="sig">
+<table class="sigs">
+  <tr>
+  <td class="sig">
     <div class="line">{% if inspector_sig %}<img src="{{ inspector_sig }}" alt="">{% endif %}</div>
     <div class="cap">Inspector: {{ insp.InspectorName }}, badge {{ insp.InspectorBadge }}</div>
-  </div>
-  <div class="sig">
+  </td>
+  <td class="sig">
     <div class="line">
       {% if insp.RepRefusedToSign %}<span class="refused">Representative refused to sign</span>
       {% elif rep_sig %}<img src="{{ rep_sig }}" alt="">{% endif %}
     </div>
     <div class="cap">Firm representative: {{ insp.FirmRepName or "" }}. Signature acknowledges receipt of this report, not agreement with findings.</div>
-  </div>
-</div>
+  </td>
+  </tr>
+</table>
 </div>
 {% endblock %}
