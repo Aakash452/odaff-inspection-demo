@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ form.FORM_TITLE }} ({{ form.FORM_CODE }})</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="agency">DEMO Department of Agriculture, Food, and Forestry<span>Consumer Protection Services</span></div>
+    <div class="form-id"><span class="code">{{ form.FORM_CODE }}</span> {{ form.FORM_TITLE }}</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="tracker" aria-label="Form parts">
+    <ol>
+      <li><a href="#part-1" data-part="1"><span class="dot"></span>Establishment</a></li>
+      <li><a href="#part-2" data-part="2"><span class="dot"></span>Samples</a></li>
+      <li><a href="#part-3" data-part="3"><span class="dot"></span>Checklist</a></li>
+      <li><a href="#part-4" data-part="4"><span class="dot"></span>Violations</a></li>
+      <li><a href="#part-5" data-part="5"><span class="dot"></span>Sign</a></li>
+    </ol>
+    <p class="draft-status" id="draft-status" aria-live="polite"></p>
+  </nav>
+
+  <main>
+    <div class="banner" id="draft-banner" hidden>
+      <span id="draft-banner-text"></span>
+      <button type="button" class="link" id="draft-discard">Discard draft</button>
+    </div>
+
+    <div class="error-summary" id="error-summary" tabindex="-1" hidden>
+      <h2>Fix these before saving</h2>
+      <ul></ul>
+    </div>
+
+    <form id="inspection-form" novalidate>
+
+      <!-- ============ Part 1 ============ -->
+      <section class="part" id="part-1" data-part="1">
+        <h2><span class="part-no">Part 1</span> Establishment and visit</h2>
+        <div class="grid">
+          <label class="f span-2"><span class="lbl">Firm name</span>
+            <input name="firm_name" required maxlength="150" autocomplete="organization">
+          </label>
+          <label class="f"><span class="lbl">License number</span>
+            <input name="license_number" required pattern="[A-Za-z0-9\-]{4,30}" data-msg-pattern="Use letters, numbers and dashes only (4-30 characters)." autocapitalize="characters">
+          </label>
+          <label class="f"><span class="lbl">Firm type</span>
+            <select name="firm_type" required>
+              <option value="">Choose one</option>
+              {% for t in form.FIRM_TYPES %}<option>{{ t }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="f span-2"><span class="lbl">Street address</span>
+            <input name="street_address" required maxlength="200" autocomplete="street-address">
+          </label>
+          <label class="f"><span class="lbl">City</span>
+            <input name="city" required maxlength="80">
+          </label>
+          <label class="f"><span class="lbl">ZIP code</span>
+            <input name="zip" required inputmode="numeric" pattern="\d{5}" maxlength="5" data-msg-pattern="Enter a 5-digit ZIP code.">
+          </label>
+          <label class="f"><span class="lbl">County</span>
+            <select name="county" required>
+              <option value="">Choose a county</option>
+              {% for c in form.OKLAHOMA_COUNTIES %}<option>{{ c }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="f"><span class="lbl">Contact name <em>optional</em></span>
+            <input name="contact_name" maxlength="100">
+          </label>
+          <label class="f"><span class="lbl">Contact phone <em>optional</em></span>
+            <input name="contact_phone" type="tel" inputmode="tel" pattern="\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}" data-msg-pattern="Enter a 10-digit phone number, e.g. 405-555-0142.">
+          </label>
+          <label class="f"><span class="lbl">Inspection date</span>
+            <input name="inspection_date" type="date" required>
+          </label>
+          <label class="f"><span class="lbl">Time in</span>
+            <input name="time_in" type="time" required>
+          </label>
+          <label class="f"><span class="lbl">Time out <em>optional</em></span>
+            <input name="time_out" type="time">
+          </label>
+          <label class="f span-2"><span class="lbl">Inspection type</span>
+            <select name="inspection_type" required>
+              <option value="">Choose one</option>
+              {% for t in form.INSPECTION_TYPES %}<option>{{ t }}</option>{% endfor %}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <!-- ============ Part 2 ============ -->
+      <section class="part" id="part-2" data-part="2">
+        <h2><span class="part-no">Part 2</span> Samples collected</h2>
+        <p class="hint">Add one entry per product sampled. Leave empty if no samples were taken.</p>
+        <div data-repeat="samples" class="repeat"></div>
+        <template id="tpl-sample">
+          <fieldset class="row">
+            <legend>Sample <span data-row-number></span></legend>
+            <div class="grid">
+              <label class="f span-2"><span class="lbl">Product name</span> <input data-field="product_name" required maxlength="150"></label>
+              <label class="f span-2"><span class="lbl">Guarantor</span> <input data-field="guarantor" required maxlength="150"></label>
+              <label class="f"><span class="lbl">Lot number <em>optional</em></span><input data-field="lot_number" maxlength="50"></label>
+              <label class="f"><span class="lbl">Sample type</span>
+                <select data-field="sample_type" required>
+                  <option value="">Choose one</option>
+                  {% for t in form.SAMPLE_TYPES %}<option>{{ t }}</option>{% endfor %}
+                </select>
+              </label>
+              <label class="f"><span class="lbl">Package size <em>optional</em></span><input data-field="package_size" maxlength="30" placeholder="50 lb bag"></label>
+              <label class="f"><span class="lbl">Units on hand <em>optional</em></span><input data-field="units_on_hand" type="number" min="0" step="1" inputmode="numeric"></label>
+              <label class="f"><span class="lbl">Crude protein % <em>optional</em></span><input data-field="crude_protein_pct" type="number" min="0" max="100" step="0.01" inputmode="decimal"></label>
+            </div>
+            <button type="button" class="link danger" data-remove>Remove sample <span data-row-number></span></button>
+          </fieldset>
+        </template>
+        <button type="button" class="secondary" id="add-sample">Add sample</button>
+        <p class="tally" id="sample-tally" aria-live="polite"></p>
+      </section>
+
+      <!-- ============ Part 3 ============ -->
+      <section class="part" id="part-3" data-part="3">
+        <h2><span class="part-no">Part 3</span> Label and facility checklist</h2>
+        <p class="hint">Marking an item No adds a matching violation to Part 4.</p>
+        <div class="checklist">
+          {% for item in form.CHECKLIST %}
+          <fieldset class="check" data-code="{{ item.code }}"
+            {% if item.show_when %}data-show-when="{{ item.show_when.field }}:{{ item.show_when.in | join('|') }}"{% endif %}>
+            <legend><span class="code">{{ item.code }}</span>{{ item.text }}</legend>
+            <div class="seg">
+              {% for r in form.CHECKLIST_RESPONSES %}
+              <label><input type="radio" name="checklist.{{ item.code }}" value="{{ r }}" required><span>{{ r }}</span></label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- ============ Part 4 ============ -->
+      <section class="part" id="part-4" data-part="4">
+        <h2><span class="part-no">Part 4</span> Violations and actions</h2>
+        <div data-repeat="violations" class="repeat"></div>
+        <template id="tpl-violation">
+          <fieldset class="row">
+            <legend>Violation <span data-row-number></span> <span class="tag" data-item-tag hidden></span></legend>
+            <input type="hidden" data-field="item_code">
+            <div class="grid">
+              <label class="f span-4"><span class="lbl">Violation observed</span> <textarea data-field="description" required rows="2" maxlength="500"></textarea></label>
+              <label class="f span-3"><span class="lbl">Corrective action required</span> <textarea data-field="corrective_action" required rows="2" maxlength="500"></textarea></label>
+              <label class="f"><span class="lbl">Correct by <em>optional</em></span><input data-field="correct_by" type="date"></label>
+            </div>
+            <button type="button" class="link danger" data-remove>Remove violation <span data-row-number></span></button>
+          </fieldset>
+        </template>
+        <button type="button" class="secondary" id="add-violation">Add violation</button>
+
+        <div class="stop-sale">
+          <label class="check-inline"><input type="checkbox" name="stop_sale_issued" value="true"> Stop-sale order issued</label>
+          <div class="grid" data-show-when="stop_sale_issued:true">
+            <label class="f"><span class="lbl">Stop-sale order number</span> <input name="stop_sale_order_number" required maxlength="30"></label>
+            <label class="f"><span class="lbl">Units under stop-sale</span> <input name="stop_sale_units" type="number" min="1" step="1" required inputmode="numeric"></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ Part 5 ============ -->
+      <section class="part" id="part-5" data-part="5">
+        <h2><span class="part-no">Part 5</span> Remarks and signatures</h2>
+        <label class="f"><span class="lbl">Remarks <em>optional</em></span>
+          <textarea name="remarks" rows="3" maxlength="4000"></textarea>
+        </label>
+        <div class="grid">
+          <label class="f span-2"><span class="lbl">Inspector name</span> <input name="inspector_name" required maxlength="100"></label>
+          <label class="f span-2"><span class="lbl">Badge number</span> <input name="inspector_badge" required maxlength="20"></label>
+        </div>
+        <div class="sig-grid">
+          <div class="sig" data-sig="inspector_signature">
+            <span class="sig-label">Inspector signature</span>
+            <canvas aria-label="Inspector signature pad"></canvas>
+            <button type="button" class="link" data-clear>Clear signature</button>
+          </div>
+          <div class="sig" data-sig="firm_rep_signature">
+            <label class="f"><span class="lbl">Firm representative name <em>optional</em></span><input name="firm_rep_name" maxlength="100"></label>
+            <span class="sig-label">Firm representative signature</span>
+            <canvas aria-label="Firm representative signature pad"></canvas>
+            <button type="button" class="link" data-clear>Clear signature</button>
+            <label class="check-inline"><input type="checkbox" name="rep_refused_to_sign" value="true"> Representative refused to sign</label>
+          </div>
+        </div>
+      </section>
+
+      <div class="submit-bar">
+        <p id="submit-status" aria-live="polite"></p>
+        <button type="submit" class="primary" id="submit-btn">Save inspection and create PDF</button>
+      </div>
+    </form>
+
+    <section class="done" id="done" hidden tabindex="-1">
+      <h2>Inspection saved</h2>
+      <p>Inspection <strong id="done-number"></strong> is stored and its PDF report is ready.</p>
+      <p class="actions">
+        <a class="primary" id="done-pdf" target="_blank" rel="noopener">Open PDF report</a>
+        <button type="button" class="secondary" id="done-new">Start a new inspection</button>
+      </p>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/form-core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/feed-inspection.js') }}"></script>
+</body>
+</html>

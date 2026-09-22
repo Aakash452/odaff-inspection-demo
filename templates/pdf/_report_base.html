@@ -1,0 +1,272 @@
+{# Shared layout for every inspection PDF. Each of the ~70 forms extends
+this file and fills only the `report` block, so headers, footers,
+fonts and page numbering stay identical across all documents. #}
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>{{ form.FORM_TITLE }} {{ insp.InspectionNumber }}</title>
+  <style>
+    @font-face {
+      font-family: "Public Sans";
+      src: url("fonts/PublicSans.ttf");
+      font-weight: 100 900;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: "Public Sans";
+      src: url("fonts/PublicSans-Italic.ttf");
+      font-weight: 100 900;
+      font-style: italic;
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in 0.55in 0.6in 0.55in;
+
+      @bottom-left {
+        content: "{{ insp.InspectionNumber }}  |  Generated {{ generated_at }}  |  Demonstration document, not an official record";
+        font: 7pt "Public Sans";
+        color: #5B665D;
+        width: 80%;
+      }
+
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font: 7pt "Public Sans";
+        color: #5B665D;
+        width: 20%;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Public Sans", sans-serif;
+      font-size: 8pt;
+      line-height: 1.28;
+      color: #1F2A22;
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .masthead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2.2pt solid #2E5E3A;
+      padding-bottom: 6pt;
+      margin-bottom: 6pt;
+    }
+
+    .agency {
+      font-size: 7.6pt;
+      color: #3C4A3F;
+      line-height: 1.3;
+    }
+
+    .agency strong {
+      display: block;
+      font-size: 9pt;
+      color: #1F2A22;
+    }
+
+    .doc-title {
+      white-space: nowrap;
+      font-size: 15pt;
+      font-weight: 700;
+      color: #1F4A2B;
+      margin-top: 4pt;
+      letter-spacing: -0.01em;
+    }
+
+    .numbox {
+      border: 1pt solid #1F2A22;
+      padding: 4pt 8pt;
+      text-align: right;
+      min-width: 1.9in;
+    }
+
+    .numbox .k {
+      font-size: 6.8pt;
+      color: #5B665D;
+    }
+
+    .numbox .v {
+      font-size: 11pt;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #fff;
+      background: #2E5E3A;
+      padding: 3pt 6pt;
+      margin: 7pt 0 0;
+      break-after: avoid;
+    }
+
+    h2 span {
+      font-weight: 400;
+      opacity: 0.85;
+      margin-left: 6pt;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .grid td {
+      border: 0.6pt solid #9AA79C;
+      padding: 2pt 5pt 2.5pt;
+      vertical-align: top;
+    }
+
+    .grid .k {
+      display: block;
+      font-size: 6.6pt;
+      color: #5B665D;
+      margin-bottom: 1pt;
+    }
+
+    .grid .v {
+      font-weight: 600;
+      min-height: 10pt;
+      display: block;
+    }
+
+    .rows th {
+      background: #E8EDE6;
+      font-size: 7pt;
+      font-weight: 600;
+      text-align: left;
+      padding: 2pt 5pt;
+      border: 0.6pt solid #9AA79C;
+    }
+
+    .rows td {
+      border: 0.6pt solid #9AA79C;
+      padding: 2pt 5pt;
+      vertical-align: top;
+    }
+
+    .rows tr {
+      break-inside: avoid;
+    }
+
+    .num {
+      text-align: right;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .empty {
+      color: #5B665D;
+      font-style: italic;
+      padding: 5pt;
+      border: 0.6pt solid #9AA79C;
+      border-top: 0;
+    }
+
+    .box {
+      display: inline-block;
+      width: 8pt;
+      height: 8pt;
+      border: 0.8pt solid #1F2A22;
+      vertical-align: -1pt;
+      text-align: center;
+      line-height: 7pt;
+      font-size: 7pt;
+      font-weight: 700;
+    }
+
+    .no-row td {
+      background: #FBEDEE;
+    }
+
+    .note {
+      border: 0.6pt solid #9AA79C;
+      border-top: 0;
+      padding: 4pt 6pt;
+      min-height: 24pt;
+      white-space: pre-wrap;
+    }
+
+    .alert {
+      border: 1.2pt solid #A4262C;
+      padding: 4pt 7pt;
+      margin-top: 5pt;
+    }
+
+    .alert strong {
+      color: #A4262C;
+    }
+
+    .keep {
+      break-inside: avoid;
+    }
+
+    .sigs {
+      display: flex;
+      gap: 14pt;
+      margin-top: 4pt;
+    }
+
+    .sig {
+      flex: 1;
+    }
+
+    .sig .line {
+      height: 34pt;
+      border-bottom: 0.9pt solid #1F2A22;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .sig img {
+      max-height: 32pt;
+      max-width: 100%;
+    }
+
+    .sig .cap {
+      font-size: 7pt;
+      color: #3C4A3F;
+      margin-top: 2pt;
+    }
+
+    .sig .refused {
+      font-weight: 700;
+      color: #A4262C;
+      font-size: 8pt;
+      padding-bottom: 4pt;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="masthead">
+    <div>
+      <div class="agency">
+        <strong>Demo Department</strong>
+        Consumer Protection Services Division
+      </div>
+      <div class="doc-title">{{ form.FORM_TITLE }}</div>
+    </div>
+    <div class="numbox">
+      <div class="k">Inspection number</div>
+      <div class="v">{{ insp.InspectionNumber }}</div>
+      <div class="k">Form {{ form.FORM_CODE }}</div>
+    </div>
+  </header>
+  {% block report %}{% endblock %}
+</body>
+
+</html>

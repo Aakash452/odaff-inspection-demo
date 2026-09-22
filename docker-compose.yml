@@ -1,0 +1,24 @@
+# App + SQL Server 2022. Run: docker compose up --build
+# Then load the schema once:
+#   docker compose exec db /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -i /schema/schema.mssql.sql
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:-YourStrong!Passw0rd}
+    ports: ["1433:1433"]
+    volumes:
+      - ./sql:/schema:ro
+      - mssql-data:/var/opt/mssql
+
+  app:
+    build: .
+    depends_on: [db]
+    ports: ["5000:5000"]
+    environment:
+      DB_DIALECT: mssql
+      MSSQL_CONN: "DRIVER={ODBC Driver 18 for SQL Server};SERVER=db,1433;DATABASE=Inspections;UID=sa;PWD=${SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=yes"
+
+volumes:
+  mssql-data:

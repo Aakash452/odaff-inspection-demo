@@ -1,0 +1,101 @@
+{% extends "pdf/_report_base.html" %}
+{% block report %}
+
+<h2>Part 1<span>Establishment and visit</span></h2>
+<table class="grid">
+  <tr>
+    <td colspan="2"><span class="k">Firm name</span><span class="v">{{ insp.FirmName }}</span></td>
+    <td><span class="k">License number</span><span class="v">{{ insp.LicenseNumber }}</span></td>
+    <td><span class="k">Firm type</span><span class="v">{{ insp.FirmType }}</span></td>
+  </tr>
+  <tr>
+    <td colspan="2"><span class="k">Street address</span><span class="v">{{ insp.StreetAddress }}</span></td>
+    <td><span class="k">City, ZIP</span><span class="v">{{ insp.City }}, OK {{ insp.Zip }}</span></td>
+    <td><span class="k">County</span><span class="v">{{ insp.County }}</span></td>
+  </tr>
+  <tr>
+    <td><span class="k">Contact</span><span class="v">{{ insp.ContactName or "" }}</span></td>
+    <td><span class="k">Phone</span><span class="v">{{ insp.ContactPhone or "" }}</span></td>
+    <td><span class="k">Inspection date</span><span class="v">{{ insp.InspectionDate | usdate }}</span></td>
+    <td><span class="k">Time in / out</span><span class="v">{{ insp.TimeIn | ustime }}{% if insp.TimeOut %} to {{ insp.TimeOut | ustime }}{% endif %}</span></td>
+  </tr>
+  <tr>
+    <td colspan="4"><span class="k">Inspection type</span><span class="v">
+      {% for t in form.INSPECTION_TYPES %}<span class="box">{{ "X" if t == insp.InspectionType else "" }}</span> {{ t }}&nbsp;&nbsp;&nbsp;{% endfor %}
+    </span></td>
+  </tr>
+</table>
+
+<h2>Part 2<span>Samples collected ({{ insp.samples | length }})</span></h2>
+{% if insp.samples %}
+<table class="rows">
+  <thead><tr>
+    <th style="width:4%">#</th><th style="width:23%">Product</th><th style="width:21%">Guarantor</th>
+    <th style="width:14%">Lot</th><th style="width:12%">Sample type</th><th style="width:10%">Package</th>
+    <th class="num" style="width:7%">Units</th><th class="num" style="width:9%">Protein</th>
+  </tr></thead>
+  <tbody>
+  {% for s in insp.samples %}
+    <tr>
+      <td>{{ s.LineNumber }}</td><td>{{ s.ProductName }}</td><td>{{ s.Guarantor }}</td>
+      <td>{{ s.LotNumber or "" }}</td><td>{{ s.SampleType }}</td><td>{{ s.PackageSize or "" }}</td>
+      <td class="num">{{ s.UnitsOnHand if s.UnitsOnHand is not none else "" }}</td>
+      <td class="num">{{ "%.2f%%" | format(s.CrudeProteinPct) if s.CrudeProteinPct is not none else "" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty" style="border-top:0.6pt solid #9AA79C">No samples collected.</div>
+{% endif %}
+
+<h2>Part 3<span>Label and facility checklist</span></h2>
+<table class="rows">
+  <thead><tr><th style="width:6%">Item</th><th>Requirement</th><th class="center" style="width:7%">Yes</th><th class="center" style="width:7%">No</th><th class="center" style="width:7%">N/A</th></tr></thead>
+  <tbody>
+  {% for item in checklist %}
+    {% set r = insp.checklist[item.code] %}
+    <tr class="{{ 'no-row' if r == 'No' else '' }}">
+      <td>{{ item.code }}</td><td>{{ item.text }}</td>
+      {% for opt in form.CHECKLIST_RESPONSES %}<td class="center"><span class="box">{{ "X" if r == opt else "" }}</span></td>{% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Part 4<span>Violations and required corrections ({{ insp.violations | length }})</span></h2>
+{% if insp.violations %}
+<table class="rows">
+  <thead><tr><th style="width:4%">#</th><th style="width:7%">Item</th><th style="width:40%">Violation observed</th><th>Corrective action required</th><th style="width:12%">Correct by</th></tr></thead>
+  <tbody>
+  {% for v in insp.violations %}
+    <tr><td>{{ v.LineNumber }}</td><td>{{ v.ItemCode or "-" }}</td><td>{{ v.Description }}</td><td>{{ v.CorrectiveAction }}</td><td>{{ v.CorrectBy | usdate }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty" style="border-top:0.6pt solid #9AA79C">No violations observed.</div>
+{% endif %}
+{% if insp.StopSaleIssued %}
+<div class="alert"><strong>Stop-sale order issued.</strong> Order {{ insp.StopSaleOrderNumber }} covers {{ insp.StopSaleUnits }} units. Product under stop-sale may not be sold, moved or disposed of until released in writing by the Department.</div>
+{% endif %}
+
+<div class="keep">
+<h2>Part 5<span>Remarks and acknowledgment</span></h2>
+<div class="note">{{ insp.Remarks or "None." }}</div>
+
+<div class="sigs">
+  <div class="sig">
+    <div class="line">{% if inspector_sig %}<img src="{{ inspector_sig }}" alt="">{% endif %}</div>
+    <div class="cap">Inspector: {{ insp.InspectorName }}, badge {{ insp.InspectorBadge }}</div>
+  </div>
+  <div class="sig">
+    <div class="line">
+      {% if insp.RepRefusedToSign %}<span class="refused">Representative refused to sign</span>
+      {% elif rep_sig %}<img src="{{ rep_sig }}" alt="">{% endif %}
+    </div>
+    <div class="cap">Firm representative: {{ insp.FirmRepName or "" }}. Signature acknowledges receipt of this report, not agreement with findings.</div>
+  </div>
+</div>
+</div>
+{% endblock %}
